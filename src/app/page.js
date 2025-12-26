@@ -1,49 +1,64 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { Upload, FileCode, CheckCircle, AlertCircle, Copy, Terminal, Play, Loader2, X } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Upload, FileCode, Terminal, Play, Loader2, X, Copy, 
+  ShieldCheck, Cpu, Zap, Lock, ChevronRight, Check
+} from 'lucide-react';
+
+// --- Komponen Fitur (Peran Penting) ---
+const FeatureCard = ({ icon: Icon, title, desc, delay }) => (
+  <motion.div 
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay, duration: 0.5 }}
+    className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/50 hover:bg-white/10 transition-all group"
+  >
+    <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+      <Icon className="w-6 h-6 text-purple-400" />
+    </div>
+    <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
+    <p className="text-sm text-slate-400 leading-relaxed">{desc}</p>
+  </motion.div>
+);
 
 export default function Home() {
   const [file, setFile] = useState(null);
   const [preset, setPreset] = useState('Medium');
   const [output, setOutput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [logs, setLogs] = useState([]); // Simulasi log terminal
   const [error, setError] = useState('');
-  const [dragActive, setDragActive] = useState(false);
+  const outputRef = useRef(null);
 
   const presets = ['Minify', 'Weak', 'Medium', 'Strong', 'MaxStrong', 'InsaneMode'];
 
-  // Handle Drag & Drop Animation
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0]);
-    }
-  };
+  // Fungsi simulasi terminal log
+  const addLog = (msg) => setLogs(prev => [...prev, msg]);
 
   const handleUpload = async () => {
-    if (!file) return setError("⚠️ Harap pilih file script Lua terlebih dahulu!");
+    if (!file) return setError("⚠️ Pilih file script Lua terlebih dahulu!");
     
     setLoading(true);
     setError('');
     setOutput('');
+    setLogs([]);
+
+    // Simulasi Logs Awal
+    addLog("> Initializing Prometheus Engine...");
+    addLog(`> Loading preset: ${preset}`);
+    addLog("> Uploading payload...");
 
     const formData = new FormData();
     formData.append('file', file);
     formData.append('preset', preset);
 
     try {
+      // Simulasi delay sedikit biar terlihat "mikir"
+      setTimeout(() => addLog("> Analyzing Abstract Syntax Tree (AST)..."), 800);
+      setTimeout(() => addLog("> Applying Virtual Machine transformation..."), 1500);
+      setTimeout(() => addLog("> Encrypting constant strings..."), 2200);
+
       const req = await fetch('/api/obfuscate', {
         method: 'POST',
         body: formData,
@@ -51,228 +66,274 @@ export default function Home() {
       const res = await req.json();
 
       if (req.ok) {
+        addLog("> Finalizing obfuscation...");
+        addLog("> SUCCESS: Code generated.");
         setOutput(res.code);
+        // Auto scroll ke output
+        setTimeout(() => outputRef.current?.scrollIntoView({ behavior: 'smooth' }), 500);
       } else {
-        setError(res.details || res.error || "Gagal memproses script.");
+        throw new Error(res.details || res.error);
       }
     } catch (err) {
-      setError("Gagal menghubungi server. Periksa koneksi internet Anda.");
+      setError(err.message || "Gagal menghubungi server.");
+      addLog(`> ERROR: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-slate-300 font-sans selection:bg-purple-500/30 selection:text-purple-200 overflow-x-hidden relative">
+    <div className="min-h-screen bg-[#050505] text-slate-200 font-sans selection:bg-purple-500/30 selection:text-purple-200 overflow-x-hidden">
       
-      {/* --- Animated Background Glows --- */}
-      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-900/20 rounded-full blur-[120px] animate-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-900/20 rounded-full blur-[120px] animate-pulse delay-1000"></div>
+      {/* --- Background Effects --- */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-900/20 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-900/20 rounded-full blur-[120px] animate-pulse delay-1000" />
+        <div className="absolute top-[20%] right-[20%] w-[300px] h-[300px] bg-indigo-900/10 rounded-full blur-[100px]" />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-6 py-12 md:py-20">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-12">
         
-        {/* --- Header Section --- */}
-        <header className="text-center mb-16 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-purple-400 mb-4 backdrop-blur-sm">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            Lua 5.1 Engine Ready
+        {/* --- Navbar Sederhana --- */}
+        <nav className="flex justify-between items-center mb-16">
+          <div className="flex items-center gap-2 font-bold text-xl tracking-tighter text-white">
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5 text-white" />
+            </div>
+            PROMETHEUS
           </div>
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500">
-            Prometheus
-          </h1>
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            Platform obfuscator Lua tingkat lanjut untuk mengamankan kode Anda. 
-            <span className="block md:inline text-slate-500 mt-2 md:mt-0"> Didukung oleh infrastruktur cloud modern.</span>
-          </p>
-        </header>
+          <div className="flex gap-4 text-sm font-medium text-slate-400">
+            <span className="hover:text-white cursor-pointer transition-colors">Documentation</span>
+            <span className="hover:text-white cursor-pointer transition-colors">API</span>
+            <span className="text-purple-400">v2.0 Beta</span>
+          </div>
+        </nav>
 
-        {/* --- Main Content Grid --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* --- Hero Section --- */}
+        <div className="text-center mb-20">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-purple-300 mb-6 backdrop-blur-sm"
+          >
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            Lua 5.1 Native Engine Online
+          </motion.div>
           
-          {/* LEFT PANEL: Controls (Glassmorphism) */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl relative overflow-hidden group hover:border-white/20 transition-all duration-300">
-              
-              {/* Decorative Gradient Line */}
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-blue-500 opacity-50 group-hover:opacity-100 transition-opacity"></div>
+          <motion.h1 
+            initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}
+            className="text-5xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-slate-500 mb-6"
+          >
+            Amankan Kode Lua Anda<br/>Tanpa Kompromi.
+          </motion.h1>
+          
+          <motion.p 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
+            className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed"
+          >
+            Obfuscator Lua 5.1 tingkat lanjut dengan teknologi 
+            <span className="text-purple-400 font-semibold"> Virtualization (VM)</span>, 
+            enkripsi string dinamis, dan perlindungan anti-tamper.
+          </motion.p>
+        </div>
 
-              <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-                <Terminal className="w-5 h-5 text-purple-400" />
-                Konfigurasi
-              </h2>
-              
-              <div className="space-y-6">
-                
-                {/* 1. Drag & Drop Zone */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-2 ml-1">Script Source</label>
-                  <div 
-                    className={`relative group border-2 border-dashed rounded-2xl p-8 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center text-center
-                      ${dragActive 
-                        ? 'border-purple-500 bg-purple-500/10' 
-                        : 'border-white/10 hover:border-white/20 hover:bg-white/5 bg-black/20'
-                      }
-                      ${file ? 'border-green-500/50 bg-green-500/5' : ''}
-                    `}
-                    onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
-                  >
+        {/* --- Main Interface --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-24">
+          
+          {/* LEFT: Controller */}
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}
+            className="lg:col-span-5 space-y-6"
+          >
+            <div className="bg-[#0F0F12] border border-white/10 p-1 rounded-3xl shadow-2xl">
+              <div className="bg-white/5 backdrop-blur-sm p-6 rounded-[20px] border border-white/5">
+                <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+                  <Terminal className="w-5 h-5 text-purple-400" />
+                  Control Panel
+                </h2>
+
+                {/* 1. Upload */}
+                <div className="mb-6">
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Target File</label>
+                  <div className="relative group">
                     <input 
                       type="file" 
                       accept=".lua,.txt"
                       onChange={(e) => setFile(e.target.files[0])}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                     />
-                    
-                    {file ? (
-                      <div className="flex flex-col items-center animate-in fade-in zoom-in duration-300">
-                        <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mb-3">
-                          <FileCode className="w-6 h-6 text-green-400" />
-                        </div>
-                        <p className="text-sm font-medium text-green-400 truncate max-w-[200px]">{file.name}</p>
-                        <p className="text-xs text-slate-500 mt-1">{(file.size / 1024).toFixed(2)} KB</p>
-                        <button 
-                          onClick={(e) => {e.stopPropagation(); setFile(null)}}
-                          className="mt-3 text-xs text-red-400 hover:text-red-300 flex items-center gap-1 z-20"
-                        >
-                          <X className="w-3 h-3" /> Hapus File
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                          <Upload className="w-6 h-6 text-slate-400 group-hover:text-white" />
-                        </div>
-                        <p className="text-sm text-slate-300">Klik atau seret file Lua ke sini</p>
-                        <p className="text-xs text-slate-600 mt-1">Mendukung .lua dan .txt</p>
-                      </>
-                    )}
+                    <div className={`
+                      border-2 border-dashed rounded-xl p-6 transition-all duration-300 flex flex-col items-center justify-center text-center
+                      ${file ? 'border-purple-500/50 bg-purple-500/10' : 'border-white/10 bg-black/20 group-hover:border-white/20'}
+                    `}>
+                      {file ? (
+                        <>
+                          <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center mb-2 shadow-lg shadow-purple-500/20">
+                            <FileCode className="w-6 h-6 text-white" />
+                          </div>
+                          <p className="text-sm font-medium text-white truncate max-w-[200px]">{file.name}</p>
+                          <p className="text-xs text-purple-300 mt-1">{(file.size/1024).toFixed(1)} KB</p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-8 h-8 text-slate-500 mb-3 group-hover:text-white transition-colors" />
+                          <p className="text-sm text-slate-300">Drop script Lua disini</p>
+                          <p className="text-xs text-slate-600 mt-1">Supports .lua & .txt</p>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* 2. Preset Selector */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-2 ml-1">Tingkat Keamanan</label>
-                  <div className="relative">
-                    <select 
-                      value={preset}
-                      onChange={(e) => setPreset(e.target.value)}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 appearance-none text-slate-200 transition-shadow"
-                    >
-                      {presets.map(p => <option key={p} value={p} className="bg-slate-900">{p}</option>)}
-                    </select>
-                    {/* Custom Arrow */}
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
+                {/* 2. Preset */}
+                <div className="mb-8">
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Security Level</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {presets.map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPreset(p)}
+                        className={`text-sm py-2.5 px-4 rounded-lg font-medium transition-all text-left border ${
+                          preset === p 
+                          ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-600/20' 
+                          : 'bg-white/5 border-transparent text-slate-400 hover:bg-white/10 hover:text-slate-200'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
                   </div>
                   {preset === 'InsaneMode' && (
-                    <div className="mt-3 flex items-start gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                      <AlertCircle className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
-                      <p className="text-xs text-yellow-400/90 leading-relaxed">
-                        Mode <strong>Insane</strong> sangat berat. Proses mungkin memakan waktu hingga 10-15 detik di server.
-                      </p>
+                    <div className="mt-3 text-xs text-yellow-500 bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/20 flex gap-2">
+                      <Lock className="w-3 h-3 mt-0.5" />
+                      Mode Insane menggunakan VM ganda. Proses mungkin memakan waktu 10-20 detik.
                     </div>
                   )}
                 </div>
 
-                {/* Action Button */}
+                {/* Action */}
                 <button 
                   onClick={handleUpload}
                   disabled={loading}
-                  className={`w-full py-4 rounded-xl font-bold text-sm tracking-wide shadow-lg flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+                  className={`w-full py-4 rounded-xl font-bold text-sm tracking-widest uppercase shadow-xl flex items-center justify-center gap-2 transition-all
                     ${loading 
-                      ? 'bg-slate-800 text-slate-400' 
-                      : 'bg-gradient-to-r from-blue-600 via-purple-600 to-purple-500 hover:shadow-purple-500/25 text-white'
+                      ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-[1.02] text-white hover:shadow-purple-500/25'
                     }`}
                 >
-                  {loading ? (
-                    <><Loader2 className="w-5 h-5 animate-spin" /> MEMPROSES...</>
-                  ) : (
-                    <><Play className="w-5 h-5 fill-current" /> JALANKAN PROMETHEUS</>
-                  )}
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 fill-current" />}
+                  {loading ? 'PROCESSING...' : 'INITIATE PROTOCOL'}
                 </button>
-              </div>
-
-              {/* Error Message */}
-              {error && (
-                <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 animate-in slide-in-from-top-2">
-                  <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <h4 className="text-sm font-semibold text-red-400">Terjadi Kesalahan</h4>
-                    <p className="text-xs text-red-300/80 font-mono whitespace-pre-wrap">{error}</p>
+                
+                {error && (
+                  <div className="mt-4 p-3 bg-red-900/20 border border-red-500/30 rounded-lg text-red-400 text-xs font-mono">
+                    ERROR: {error}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* RIGHT PANEL: Output (Code Editor Look) */}
-          <div className="lg:col-span-7 h-full min-h-[500px] flex flex-col">
-            <div className="bg-[#0f0f0f] border border-white/10 rounded-3xl shadow-2xl flex flex-col flex-grow overflow-hidden ring-1 ring-white/5 relative">
+          {/* RIGHT: Output / Terminal */}
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}
+            className="lg:col-span-7 flex flex-col h-full min-h-[500px]"
+            ref={outputRef}
+          >
+            <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl shadow-2xl flex flex-col flex-grow overflow-hidden relative group">
               
-              {/* Fake Browser/Editor Header */}
-              <div className="bg-white/5 border-b border-white/5 px-4 py-3 flex items-center justify-between backdrop-blur-md">
+              {/* Header Editor */}
+              <div className="bg-[#151515] border-b border-white/5 px-4 py-3 flex items-center justify-between">
                 <div className="flex gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50"></div>
                   <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50"></div>
                   <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50"></div>
                 </div>
-                <div className="text-xs font-mono text-slate-500 flex items-center gap-2">
-                  <FileCode className="w-3 h-3" />
-                  output.lua
+                <div className="text-xs font-mono text-slate-500">
+                  {loading ? 'compiling...' : output ? 'obfuscated.lua' : 'idle'}
                 </div>
                 {output && (
                   <button 
-                    onClick={() => {navigator.clipboard.writeText(output); alert("Berhasil disalin!")}}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs text-slate-300 transition-colors border border-white/5"
+                    onClick={() => {navigator.clipboard.writeText(output); alert("Code Copied!")}}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-white/5 hover:bg-white/10 rounded-md text-xs text-green-400 border border-green-900/30 transition-colors"
                   >
-                    <Copy className="w-3 h-3" /> Salin
+                    <Copy className="w-3 h-3" /> COPY
                   </button>
                 )}
               </div>
 
-              {/* Code Area */}
-              <div className="relative flex-grow">
-                {!output && !loading && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-700 pointer-events-none">
-                    <Terminal className="w-16 h-16 mb-4 opacity-20" />
-                    <p className="text-sm font-medium opacity-40">Menunggu output...</p>
-                  </div>
-                )}
+              {/* Area Konten */}
+              <div className="relative flex-grow bg-[#050505] font-mono text-sm p-4 overflow-auto custom-scrollbar">
                 
-                {loading && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm z-20">
-                    <div className="relative">
-                      <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-8 h-8 bg-purple-500 rounded-full animate-pulse"></div>
-                      </div>
-                    </div>
-                    <p className="mt-6 text-sm font-medium text-purple-300 animate-pulse">Sedang mengunyah kode Lua...</p>
+                {/* State: Idle */}
+                {!loading && !output && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-800">
+                    <Cpu className="w-20 h-20 mb-4 opacity-20" />
+                    <p className="text-sm font-medium opacity-40 uppercase tracking-widest">System Ready</p>
                   </div>
                 )}
 
-                <textarea 
-                  readOnly 
-                  value={output} 
-                  spellCheck="false"
-                  className="w-full h-full bg-transparent p-6 font-mono text-sm text-green-400/90 resize-none focus:outline-none leading-6 selection:bg-green-900/30"
-                  placeholder=""
-                />
-              </div>
+                {/* State: Loading (Terminal Simulation) */}
+                {loading && (
+                  <div className="space-y-1 font-mono text-xs">
+                    {logs.map((log, i) => (
+                      <motion.div 
+                        key={i}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="text-green-500/80"
+                      >
+                        {log}
+                      </motion.div>
+                    ))}
+                    <motion.div 
+                      animate={{ opacity: [0, 1, 0] }} 
+                      transition={{ repeat: Infinity, duration: 0.8 }}
+                      className="w-2 h-4 bg-green-500 inline-block align-middle ml-1"
+                    />
+                  </div>
+                )}
 
-              {/* Status Bar */}
-              <div className="bg-black/40 border-t border-white/5 px-4 py-2 flex justify-between items-center text-[10px] text-slate-600 font-mono uppercase tracking-wider">
-                <span>Ln {output.split('\n').length}, Col 1</span>
-                <span>UTF-8</span>
-                <span>Lua 5.1</span>
+                {/* State: Output Result */}
+                {!loading && output && (
+                  <textarea 
+                    readOnly 
+                    value={output} 
+                    spellCheck="false"
+                    className="w-full h-full bg-transparent text-slate-300 resize-none focus:outline-none leading-6 font-mono text-xs"
+                  />
+                )}
               </div>
             </div>
-          </div>
-
+          </motion.div>
         </div>
+
+        {/* --- Features Grid (Peran Penting) --- */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+          <FeatureCard 
+            icon={Cpu}
+            delay={0.5}
+            title="Custom Virtual Machine"
+            desc="Kode Anda dikompilasi menjadi bytecode kustom dan dijalankan oleh VM unik di setiap obfuscation. Mustahil di-decompile secara statis."
+          />
+          <FeatureCard 
+            icon={ShieldCheck}
+            delay={0.6}
+            title="Anti-Tamper & Debug"
+            desc="Sistem deteksi runtime yang mematikan script secara otomatis jika mendeteksi debugger, hook, atau perubahan integritas kode."
+          />
+          <FeatureCard 
+            icon={Lock}
+            delay={0.7}
+            title="Constant Encryption"
+            desc="Semua string dan angka dienkripsi dengan algoritma polimorfik. String sensitif Anda tidak akan terbaca di memori dengan mudah."
+          />
+        </div>
+
+        {/* --- Footer --- */}
+        <footer className="border-t border-white/5 pt-8 text-center text-slate-600 text-sm">
+          <p>© 2025 Prometheus Obfuscator. Powered by Lua 5.1 & Next.js.</p>
+        </footer>
+
       </div>
     </div>
   );
