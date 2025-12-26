@@ -30,7 +30,7 @@ export default function ControlModule({ file, setFile, preset, setPreset, onFire
         <div className="relative group">
           <input 
             type="file" 
-            [cite_start]accept=".lua,.txt" // [cite: 28]
+            accept=".lua,.txt" // [cite: 28]
             onChange={(e) => setFile(e.target.files[0])}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
           />
