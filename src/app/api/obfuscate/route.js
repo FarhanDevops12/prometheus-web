@@ -5,85 +5,77 @@ import path from 'path';
 import os from 'os';
 
 export async function POST(req) {
+  let inputPath = null;
+  let outputPath = null;
+
   try {
     const formData = await req.formData();
     const file = formData.get('file');
     const preset = formData.get('preset') || 'Medium';
 
-    if (!file) {
-      return NextResponse.json({ error: 'File Lua diperlukan' }, { status: 400 });
-    }
+    if (!file) return NextResponse.json({ error: 'File Lua tidak ditemukan' }, { status: 400 });
 
-    // 1. Setup Path Direktori
+    // 1. Setup Path
     const projectRoot = process.cwd();
-    // Folder tempat script Lua kamu berada
     const engineDir = path.join(projectRoot, 'lua_engine');
-    // Path ke Binary Lua
     const luaBinary = path.join(engineDir, 'bin', 'lua5.1');
 
-    // Cek apakah binary ada (Debugging Vercel)
-    if (!fs.existsSync(luaBinary)) {
-        return NextResponse.json({ error: `Binary Lua tidak ditemukan di: ${luaBinary}` }, { status: 500 });
-    }
-
-    // Pastikan binary bisa dieksekusi (Linux Permission)
-    try { fs.chmodSync(luaBinary, '755'); } catch (e) {}
-
-    // 2. Simpan File User Sementara (Vercel hanya mengizinkan tulis di /tmp)
+    // 2. Simpan File Sementara
     const tempDir = os.tmpdir();
     const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-    const inputPath = path.join(tempDir, `in_${uniqueId}.lua`);
-    const outputPath = path.join(tempDir, `out_${uniqueId}.lua`);
+    inputPath = path.join(tempDir, `in_${uniqueId}.lua`);
+    outputPath = path.join(tempDir, `out_${uniqueId}.lua`);
 
-    // Tulis file upload ke /tmp
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    fs.writeFileSync(inputPath, buffer);
+    fs.writeFileSync(inputPath, Buffer.from(bytes));
 
-    // 3. Siapkan Command Lua
-    // Format: ./bin/lua5.1 prometheus-main.lua --preset [PRESET] --out [OUTPUT] [INPUT]
-    // Kita jalankan DARI DALAM folder lua_engine supaya "require('src...')" jalan
-    const args = [
-      'prometheus-main.lua',
-      '--preset', preset,
-      '--Lua51', // Force config Lua 5.1
-      '--out', outputPath,
-      inputPath
-    ];
+    // Pastikan permission execute (Fix untuk Vercel)
+    if (fs.existsSync(luaBinary)) {
+        try { fs.chmodSync(luaBinary, '755'); } catch (e) {}
+    } else {
+        return NextResponse.json({ error: 'Binary Lua hilang dari server!', path: luaBinary }, { status: 500 });
+    }
 
-    console.log(`🚀 Executing: ${luaBinary} ${args.join(' ')}`);
-
-    // 4. Eksekusi Child Process
+    // 3. Eksekusi Lua
+    const args = ['prometheus-main.lua', '--preset', preset, '--Lua51', '--out', outputPath, inputPath];
+    
+    // Kita bungkus execFile dalam Promise yang menangkap stdout dan stderr
     await new Promise((resolve, reject) => {
       execFile(luaBinary, args, { 
-        cwd: engineDir, // PENTING: Jalankan command seolah-olah kita ada di folder lua_engine
-        timeout: 25000  // Timeout 25 detik (Vercel Hobby limit 10s sebenernya, Pro 300s)
+        cwd: engineDir, 
+        timeout: 10000 
       }, (error, stdout, stderr) => {
+        // Jika error, kita reject dengan pesan yang JELAS
         if (error) {
-          console.error("Lua Error:", stderr || stdout);
-          reject(stderr || stdout || error.message);
+          // Gabungkan stderr (error lua) dan stdout (log lua)
+          const errorLog = stderr || stdout || error.message;
+          reject(new Error(errorLog)); 
         } else {
           resolve(stdout);
         }
       });
     });
 
-    // 5. Baca Hasil Output
+    // 4. Cek Output
     if (!fs.existsSync(outputPath)) {
-        throw new Error("Output file tidak terbentuk. Cek log error Lua.");
+        throw new Error("Lua berhasil jalan tapi file output tidak muncul.");
     }
     const result = fs.readFileSync(outputPath, 'utf-8');
-
-    // 6. Bersihkan Sampah
-    try { fs.unlinkSync(inputPath); fs.unlinkSync(outputPath); } catch(e) {}
 
     return NextResponse.json({ success: true, code: result });
 
   } catch (error) {
-    console.error("Server Error:", error);
+    console.error("❌ OBSFUCATION ERROR:", error.message);
+    
+    // Kirim pesan error ASLI dari Lua ke Frontend
     return NextResponse.json({ 
-      error: 'Terjadi kesalahan sistem', 
-      details: error.toString() 
+      error: 'Gagal Memproses Script', 
+      details: error.message // Ini yang akan muncul di kotak merah website
     }, { status: 500 });
+
+  } finally {
+    // Cleanup file sampah
+    try { if(inputPath && fs.existsSync(inputPath)) fs.unlinkSync(inputPath); } catch(e) {}
+    try { if(outputPath && fs.existsSync(outputPath)) fs.unlinkSync(outputPath); } catch(e) {}
   }
 }
