@@ -2,121 +2,76 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Upload, Zap, Copy, Terminal, Shield, Cpu, Lock, 
-  Activity, CheckCircle, XCircle, AlertTriangle 
+  Upload, Zap, Copy, Terminal, Shield, 
+  Cpu, Lock, ChevronDown, Check, AlertTriangle 
 } from 'lucide-react';
-
-// --- COMPONENTS ---
-
-const CyberButton = ({ onClick, disabled, children, color = 'cyan' }) => (
-  <motion.button
-    whileHover={{ scale: 1.02 }}
-    whileTap={{ scale: 0.95 }}
-    onClick={onClick}
-    disabled={disabled}
-    className={`
-      relative w-full py-4 px-6 font-bold uppercase tracking-widest text-sm transition-all
-      border border-${color === 'pink' ? 'cyber-pink' : 'cyber-cyan'} 
-      text-${color === 'pink' ? 'cyber-pink' : 'cyber-cyan'}
-      hover:bg-${color === 'pink' ? 'cyber-pink' : 'cyber-cyan'}/10
-      hover:shadow-neon-${color === 'pink' ? 'pink' : 'cyan'}
-      disabled:opacity-50 disabled:cursor-not-allowed
-      group overflow-hidden
-    `}
-  >
-    <div className="absolute inset-0 bg-scanline opacity-10 pointer-events-none"></div>
-    <span className="relative z-10 flex items-center justify-center gap-2">
-      {children}
-    </span>
-  </motion.button>
-);
-
-const PresetCard = ({ id, label, desc, active, onClick }) => (
-  <div 
-    onClick={() => onClick(id)}
-    className={`
-      cursor-pointer p-3 border transition-all duration-300 relative overflow-hidden group
-      ${active 
-        ? 'border-cyber-cyan bg-cyber-cyan/10 shadow-neon-cyan' 
-        : 'border-white/10 hover:border-cyber-cyan/50 hover:bg-white/5'
-      }
-    `}
-  >
-    {active && <div className="absolute top-0 right-0 w-2 h-2 bg-cyber-cyan shadow-neon-cyan" />}
-    <h3 className={`font-bold text-sm ${active ? 'text-cyber-cyan' : 'text-slate-300'}`}>{label}</h3>
-    <p className="text-[10px] text-slate-500 mt-1 font-mono uppercase">{desc}</p>
-  </div>
-);
-
-// --- MAIN PAGE ---
 
 export default function Home() {
   const [file, setFile] = useState(null);
-  const [preset, setPreset] = useState('Medium');
+  // DEFAULT LANGSUNG INSANE MODE
+  const [preset, setPreset] = useState('InsaneMode'); 
   const [output, setOutput] = useState('');
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState([]);
   const [error, setError] = useState('');
-  const bottomRef = useRef(null);
+  const outputRef = useRef(null);
 
+  // Daftar Preset untuk Dropdown
   const presets = [
-    { id: 'Minify', label: 'MINIFY', desc: 'Compact / Fast' },
-    { id: 'Weak', label: 'WEAK', desc: 'Basic Layer' },
-    { id: 'Medium', label: 'MEDIUM', desc: 'Standard Prot' },
-    { id: 'Strong', label: 'STRONG', desc: 'Heavy Encrypt' },
-    { id: 'MaxStrong', label: 'MAX', desc: 'Max Security' },
-    { id: 'InsaneMode', label: 'INSANE', desc: 'Dual VM (Slow)' },
+    { value: 'Minify', label: 'Minify (Fast)' },
+    { value: 'Weak', label: 'Weak (Basic)' },
+    { value: 'Medium', label: 'Medium (Standard)' },
+    { value: 'Strong', label: 'Strong (Heavy)' },
+    { value: 'MaxStrong', label: 'Max Strong (Hard)' },
+    { value: 'InsaneMode', label: '💀 INSANE MODE (MAX)' },
   ];
 
-  const addLog = (msg, type = 'info') => {
-    const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
-    setLogs(prev => [...prev, { time: timestamp, msg, type }]);
-    // Auto scroll logs
+  const addLog = (msg) => {
+    setLogs(prev => [...prev, msg]);
+    // Auto scroll terminal ke bawah
     setTimeout(() => {
-      const logContainer = document.getElementById('terminal-logs');
-      if (logContainer) logContainer.scrollTop = logContainer.scrollHeight;
-    }, 100);
+      if (outputRef.current) {
+        outputRef.current.scrollTop = outputRef.current.scrollHeight;
+      }
+    }, 50);
   };
 
   const handleUpload = async () => {
-    if (!file) return setError("NO_FILE_DETECTED: Harap upload script Lua.");
+    if (!file) return setError("⚠️ Pilih file Lua dulu!");
     
     setLoading(true);
     setError('');
     setOutput('');
     setLogs([]);
-    
-    addLog("Initializing Prometheus v2.5...", 'system');
-    addLog(`Target File: ${file.name}`, 'info');
-    addLog(`Security Level: ${preset.toUpperCase()}`, 'warn');
 
     const formData = new FormData();
     formData.append('file', file);
     formData.append('preset', preset);
 
+    addLog("[SYS] Initializing Prometheus Core...");
+    addLog(`[CFG] Mode: ${preset}`);
+    
     try {
-      // Fake processing steps for visual effect
-      const steps = [
-        "Analyzing syntax tree...",
-        "Injecting anti-tamper runtime...",
-        "Encrypting string constants...",
-        "Building virtual machine instructions..."
+      // Simulasi loading logs biar keren (Visual Effect)
+      const fakeSteps = [
+        "[AST] Parsing Abstract Syntax Tree...",
+        "[VM] Generating Virtual Machine Opcodes...",
+        "[ENC] Encrypting Constant Pool...",
+        "[CHK] Verifying Integrity..."
       ];
-      
-      for (let i = 0; i < steps.length; i++) {
-        setTimeout(() => addLog(steps[i], 'process'), i * 800 + 500);
+
+      for (let i = 0; i < fakeSteps.length; i++) {
+        setTimeout(() => addLog(fakeSteps[i]), i * 800 + 500);
       }
 
       const req = await fetch('/api/obfuscate', { method: 'POST', body: formData });
       const res = await req.json();
 
-      // Wait a bit for "fake steps" to finish
+      // Tunggu logs visual selesai baru tampilkan hasil
       setTimeout(() => {
         if (req.ok) {
-          addLog("Obfuscation Complete.", 'success');
+          addLog("[OK] Obfuscation Complete.");
           setOutput(res.code);
-          // Scroll to bottom
-          bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
         } else {
           throw new Error(res.details || res.error);
         }
@@ -126,192 +81,198 @@ export default function Home() {
     } catch (err) {
       setTimeout(() => {
         setError(err.message);
-        addLog(`CRITICAL ERROR: ${err.message}`, 'error');
+        addLog(`[ERR] ${err.message}`);
         setLoading(false);
       }, 1000);
     }
   };
 
   return (
-    <div className="min-h-screen relative p-4 md:p-8">
-      {/* Background Grid CSS Animation */}
-      <div className="cyber-grid"></div>
+    // CONTAINER UTAMA (100% Layar, Tidak ada Scroll Body)
+    <div className="h-screen w-screen overflow-hidden text-slate-200 font-sans relative flex items-center justify-center animated-bg">
+      
+      {/* Background Image Overlay (Opsional - Cyberpunk City) */}
+      <div 
+        className="absolute inset-0 opacity-20 pointer-events-none mix-blend-overlay bg-cover bg-center"
+        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1555680202-c86f0e12f086?q=80&w=2070&auto=format&fit=crop')" }}
+      ></div>
 
-      <main className="max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 mt-10">
+      {/* Grid Pattern Overlay */}
+      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10"></div>
+
+      {/* --- MAIN APP CARD (Center, Glassmorphism) --- */}
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0 }} 
+        animate={{ scale: 1, opacity: 1 }}
+        className="
+          relative z-10 w-full h-full md:h-[85vh] md:w-[90vw] max-w-6xl 
+          bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl 
+          md:rounded-3xl overflow-hidden flex flex-col md:flex-row
+        "
+      >
         
-        {/* --- HEADER --- */}
-        <div className="lg:col-span-12 text-center mb-8">
-          <div className="inline-block border border-cyber-cyan/30 bg-black/50 backdrop-blur px-4 py-1 rounded-sm mb-4">
-            <span className="text-cyber-cyan text-xs font-mono animate-pulse">● SYSTEM ONLINE</span>
+        {/* === LEFT PANEL: CONTROLS === */}
+        <div className="w-full md:w-1/3 p-6 md:p-8 flex flex-col gap-6 border-b md:border-b-0 md:border-r border-white/10 bg-black/40">
+          
+          {/* Header */}
+          <div>
+            <h1 className="text-3xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
+              PROMETHEUS
+            </h1>
+            <p className="text-xs font-mono text-slate-500 uppercase tracking-[0.2em]">Lua 5.1 Obfuscator Engine</p>
           </div>
-          <h1 className="text-5xl md:text-7xl font-black text-white mb-2 tracking-tighter glitch" data-text="PROMETHEUS">
-            PROMETHEUS
-          </h1>
-          <p className="text-slate-400 font-mono text-sm tracking-widest">LUA 5.1 OBFUSCATION ENGINE</p>
-        </div>
 
-        {/* --- LEFT PANEL: CONTROL --- */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="bg-black/80 border border-white/10 p-1 backdrop-blur-md relative">
-            {/* Corner Accents */}
-            <div className="absolute top-0 left-0 w-2 h-2 border-l-2 border-t-2 border-cyber-cyan"></div>
-            <div className="absolute top-0 right-0 w-2 h-2 border-r-2 border-t-2 border-cyber-cyan"></div>
-            <div className="absolute bottom-0 left-0 w-2 h-2 border-l-2 border-b-2 border-cyber-cyan"></div>
-            <div className="absolute bottom-0 right-0 w-2 h-2 border-r-2 border-b-2 border-cyber-cyan"></div>
-
-            <div className="p-6 space-y-8">
-              {/* Upload Section */}
-              <div>
-                <h2 className="text-cyber-cyan font-bold text-sm uppercase mb-4 flex items-center gap-2">
-                  <Upload size={16} /> 1. Upload Source
-                </h2>
-                <div className="relative group cursor-pointer">
-                  <input 
-                    type="file" 
-                    accept=".lua,.txt" 
-                    onChange={(e) => setFile(e.target.files[0])}
-                    className="absolute inset-0 w-full h-full opacity-0 z-20 cursor-pointer"
-                  />
-                  <div className={`
-                    h-24 border border-dashed transition-all flex flex-col items-center justify-center
-                    ${file ? 'border-cyber-cyan bg-cyber-cyan/5' : 'border-white/20 hover:border-cyber-cyan/50'}
-                  `}>
-                    {file ? (
-                      <div className="text-center">
-                        <p className="text-cyber-cyan font-bold">{file.name}</p>
-                        <p className="text-xs text-slate-500">{(file.size/1024).toFixed(1)} KB</p>
-                      </div>
-                    ) : (
-                      <p className="text-slate-500 text-xs uppercase tracking-widest">Drop Lua File Here</p>
-                    )}
-                  </div>
+          {/* Form Area */}
+          <div className="flex-grow space-y-5">
+            
+            {/* 1. File Upload (Button Style) */}
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Source Code</label>
+              <div className="relative group">
+                <input 
+                  type="file" 
+                  accept=".lua,.txt"
+                  onChange={(e) => setFile(e.target.files[0])}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                />
+                <div className={`
+                  w-full py-4 px-4 rounded-xl border border-dashed transition-all flex items-center justify-center gap-3
+                  ${file ? 'border-purple-500 bg-purple-500/20' : 'border-white/20 bg-white/5 hover:bg-white/10'}
+                `}>
+                  {file ? (
+                    <>
+                      <div className="bg-purple-500 p-1.5 rounded-md"><Check size={16} className="text-white" /></div>
+                      <span className="text-sm font-bold text-white truncate">{file.name}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={18} className="text-slate-400" />
+                      <span className="text-sm text-slate-400 font-medium">Click to Upload Script</span>
+                    </>
+                  )}
                 </div>
-              </div>
-
-              {/* Preset Section */}
-              <div>
-                <h2 className="text-cyber-pink font-bold text-sm uppercase mb-4 flex items-center gap-2">
-                  <Shield size={16} /> 2. Security Level
-                </h2>
-                <div className="grid grid-cols-2 gap-2">
-                  {presets.map(p => (
-                    <PresetCard 
-                      key={p.id} 
-                      {...p} 
-                      active={preset === p.id} 
-                      onClick={setPreset} 
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Action */}
-              <div>
-                 <CyberButton onClick={handleUpload} disabled={loading} color={loading ? 'cyan' : 'pink'}>
-                    {loading ? <Activity className="animate-spin" /> : <Zap className="fill-current" />}
-                    {loading ? 'PROCESSING...' : 'INITIATE'}
-                 </CyberButton>
-
-                 {error && (
-                   <div className="mt-4 p-3 bg-cyber-red/10 border-l-2 border-cyber-red text-cyber-red text-xs font-mono flex gap-2">
-                     <AlertTriangle size={14} /> {error}
-                   </div>
-                 )}
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* --- RIGHT PANEL: TERMINAL --- */}
-        <div className="lg:col-span-7 flex flex-col h-[600px] lg:h-auto relative">
-          <div className="bg-black/90 border border-white/10 flex-grow flex flex-col font-mono text-xs relative overflow-hidden">
-             {/* Decorative header */}
-             <div className="bg-white/5 p-2 flex justify-between items-center border-b border-white/10">
-               <div className="flex gap-4">
-                 <span className="text-slate-500">TERMINAL</span>
-                 <span className="text-cyber-cyan">/bin/lua5.1</span>
-               </div>
-               <div className="flex gap-1">
-                 <div className="w-3 h-3 rounded-full bg-slate-700"></div>
-                 <div className="w-3 h-3 rounded-full bg-slate-700"></div>
-               </div>
-             </div>
-
-             {/* Terminal Output Area */}
-             <div className="flex-grow relative flex flex-col">
-                {/* 1. Logs View (Shows during loading or empty) */}
-                <div 
-                  id="terminal-logs"
-                  className={`absolute inset-0 p-4 overflow-y-auto space-y-1 transition-opacity duration-300 ${output ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+            {/* 2. Preset Dropdown (Modern Select) */}
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Security Level</label>
+              <div className="relative">
+                <select 
+                  value={preset}
+                  onChange={(e) => setPreset(e.target.value)}
+                  className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl py-4 px-4 pr-10 text-sm font-bold text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all cursor-pointer"
                 >
-                  <div className="text-slate-600 mb-4">
-                    Prometheus OS [Version 2.0.5]<br/>
-                    (c) 2025 Prometheus Security. All rights reserved.<br/>
-                    <br/>
-                    Ready for input...
-                  </div>
-                  {logs.map((log, i) => (
-                    <div key={i} className="flex gap-2">
-                      <span className="text-slate-600">[{log.time}]</span>
-                      <span className={`
-                        ${log.type === 'system' ? 'text-cyber-cyan font-bold' : ''}
-                        ${log.type === 'error' ? 'text-cyber-red font-bold' : ''}
-                        ${log.type === 'success' ? 'text-green-400 font-bold' : ''}
-                        ${log.type === 'info' ? 'text-slate-300' : ''}
-                        ${log.type === 'process' ? 'text-cyber-pink animate-pulse' : ''}
-                      `}>
-                        {log.type === 'process' ? '>> ' : ''}{log.msg}
-                      </span>
-                    </div>
+                  {presets.map(p => (
+                    <option key={p.value} value={p.value} className="bg-slate-900 text-slate-300">
+                      {p.label}
+                    </option>
                   ))}
-                  {loading && <div className="w-2 h-4 bg-cyber-cyan animate-pulse"></div>}
+                </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
+              </div>
+              {/* Alert jika Insane Mode */}
+              {preset === 'InsaneMode' && (
+                <div className="mt-2 flex items-center gap-2 text-[10px] text-yellow-500 bg-yellow-500/10 p-2 rounded-lg border border-yellow-500/20">
+                  <AlertTriangle size={12} />
+                  <span>Heavy Processing: Might take 10-15s</span>
                 </div>
+              )}
+            </div>
 
-                {/* 2. Code Output View (Shows when success) */}
-                {output && (
-                  <div className="absolute inset-0 flex flex-col animate-in fade-in duration-500">
-                    <textarea 
-                      readOnly 
-                      value={output}
-                      className="flex-grow bg-transparent p-4 text-green-400 focus:outline-none resize-none custom-scrollbar"
-                      spellCheck="false"
-                    />
-                    <div className="p-4 border-t border-white/10 bg-white/5 flex justify-between items-center">
-                      <span className="text-slate-500">Ln {output.split('\n').length}, UTF-8</span>
-                      <button 
-                        onClick={() => {navigator.clipboard.writeText(output); alert("COPIED!")}}
-                        className="px-4 py-2 bg-green-500/20 text-green-400 border border-green-500/50 text-[10px] font-bold uppercase tracking-widest hover:bg-green-500/40 transition-colors"
-                      >
-                        COPY CODE
-                      </button>
-                    </div>
-                  </div>
-                )}
-             </div>
           </div>
-          <div ref={bottomRef}></div>
+
+          {/* Action Button (Bottom of Left Panel) */}
+          <div className="mt-auto">
+             <button
+                onClick={handleUpload}
+                disabled={loading}
+                className={`
+                  w-full py-5 rounded-xl font-black text-sm uppercase tracking-widest shadow-lg flex items-center justify-center gap-3 transition-all
+                  ${loading 
+                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:scale-[1.02] hover:shadow-purple-500/40 text-white'
+                  }
+                `}
+             >
+                {loading ? <Cpu className="animate-spin" /> : <Zap className="fill-white" />}
+                {loading ? 'PROCESSING...' : 'EXECUTE OBFUSCATION'}
+             </button>
+             {error && <p className="mt-3 text-xs text-red-400 text-center font-mono">{error}</p>}
+          </div>
+
         </div>
 
-        {/* --- FEATURES FOOTER --- */}
-        <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-4">
-           {[
-             { icon: Cpu, title: "Virtual Machine", desc: "Custom Bytecode execution" },
-             { icon: Lock, title: "Poly-Encryption", desc: "Dynamic string protection" },
-             { icon: AlertTriangle, title: "Anti-Tamper", desc: "Runtime integrity check" }
-           ].map((f, i) => (
-             <div key={i} className="bg-black/50 border border-white/5 p-4 flex items-center gap-4">
-               <div className="p-2 bg-cyber-cyan/10 rounded-full">
-                 <f.icon className="text-cyber-cyan" size={20} />
+        {/* === RIGHT PANEL: TERMINAL OUTPUT === */}
+        <div className="w-full md:w-2/3 bg-[#0a0a0c] flex flex-col relative font-mono text-xs">
+          
+          {/* Mac-style Window Header */}
+          <div className="h-12 border-b border-white/5 flex items-center justify-between px-6 bg-[#0f0f11]">
+            <div className="flex gap-2">
+              <div className="w-3 h-3 rounded-full bg-red-500/40"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-500/40"></div>
+              <div className="w-3 h-3 rounded-full bg-green-500/40"></div>
+            </div>
+            <div className="text-slate-500 flex items-center gap-2">
+              <Terminal size={12} />
+              <span>{output ? 'result.lua' : 'console'}</span>
+            </div>
+            {output ? (
+              <button 
+                onClick={() => {navigator.clipboard.writeText(output); alert("Copied!")}}
+                className="text-green-400 hover:text-green-300 flex items-center gap-1 uppercase font-bold text-[10px]"
+              >
+                <Copy size={12} /> Copy
+              </button>
+            ) : <div className="w-8"></div>}
+          </div>
+
+          {/* Terminal Content Area */}
+          <div 
+            ref={outputRef}
+            className="flex-grow p-6 overflow-y-auto custom-scroll relative"
+          >
+            {/* 1. Loading Logs */}
+            {loading && (
+               <div className="space-y-2">
+                 {logs.map((log, i) => (
+                   <div key={i} className="text-green-500/80">
+                     <span className="text-green-700 mr-2">$</span>{log}
+                   </div>
+                 ))}
+                 <div className="w-2 h-4 bg-green-500 animate-pulse inline-block"></div>
                </div>
-               <div>
-                 <h4 className="text-white font-bold text-xs uppercase">{f.title}</h4>
-                 <p className="text-slate-500 text-[10px]">{f.desc}</p>
-               </div>
-             </div>
-           ))}
+            )}
+
+            {/* 2. Code Result */}
+            {!loading && output && (
+              <textarea 
+                readOnly 
+                value={output}
+                className="w-full h-full bg-transparent text-purple-300 resize-none focus:outline-none"
+                spellCheck="false"
+              />
+            )}
+
+            {/* 3. Empty State */}
+            {!loading && !output && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-800 opacity-50">
+                <Shield size={64} className="mb-4" />
+                <p className="uppercase tracking-[0.3em] font-bold">System Idle</p>
+                <p className="text-[10px] mt-2">Ready for injection</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Footer Bar */}
+          <div className="h-8 border-t border-white/5 bg-[#050505] flex items-center justify-between px-4 text-[10px] text-slate-600">
+            <span>Lua 5.1 Environment</span>
+            <span>UTF-8</span>
+          </div>
+
         </div>
 
-      </main>
+      </motion.div>
     </div>
   );
 }
