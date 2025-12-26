@@ -3,35 +3,45 @@
 @tailwind utilities;
 
 :root {
-  --bg-dark: #050505;
+  --crt-flicker: 0.02;
 }
 
-/* Kunci Scrollbar agar seperti Aplikasi Native */
-body, html {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden; /* DILARANG SCROLL */
-  background-color: var(--bg-dark);
-  font-family: 'Inter', sans-serif;
-  -webkit-font-smoothing: antialiased;
+body {
+  background-color: #020202;
+  color: #00ff41;
+  overflow: hidden; /* [cite: 57] */
 }
 
-/* Custom Scrollbar hanya untuk area Terminal */
-.custom-scroll::-webkit-scrollbar { width: 4px; }
-.custom-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
-.custom-scroll::-webkit-scrollbar-thumb { background: #d946ef; border-radius: 10px; }
-
-/* Animasi Background Bergerak */
-@keyframes drift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+/* CRT SCANLINE OVERLAY */
+.crt-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0) 50%,
+    rgba(0, 0, 0, 0.2) 50%,
+    rgba(0, 0, 0, 0.2)
+  );
+  background-size: 100% 4px;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 50;
+  pointer-events: none;
 }
 
-.animated-bg {
-  background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #000000);
-  background-size: 400% 400%;
-  animation: drift 15s ease infinite;
+/* SUBTLE SCREEN CURVATURE (VIGNETTE) */
+.vignette {
+  background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.8) 100%);
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+}
+
+/* TEXT GLOW - PHOSPHOR EFFECT */
+.glow-text {
+  text-shadow: 0 0 5px rgba(0, 255, 65, 0.5), 0 0 10px rgba(0, 255, 65, 0.3);
+}
+
+.glow-text-red {
+  text-shadow: 0 0 5px rgba(255, 0, 0, 0.5), 0 0 10px rgba(255, 0, 0, 0.3);
 }

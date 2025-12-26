@@ -1,276 +1,102 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Upload, Zap, Copy, Terminal, Shield, 
-  Cpu, Lock, ChevronDown, Check, AlertTriangle 
-} from 'lucide-react';
+import ControlModule from './ControlModule'; // Component we just made
+import HackerTerminal from './HackerTerminal'; // Component we just made
 
 export default function Home() {
   const [file, setFile] = useState(null);
-  // DEFAULT LANGSUNG INSANE MODE
-  const [preset, setPreset] = useState('InsaneMode'); 
+  const [preset, setPreset] = useState('Medium'); 
   const [output, setOutput] = useState('');
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState([]);
-  const [error, setError] = useState('');
-  const outputRef = useRef(null);
+  
+  // INSANE MODE TRIGGER
+  const isCritical = preset === 'InsaneMode';
 
-  // Daftar Preset untuk Dropdown
-  const presets = [
-    { value: 'Minify', label: 'Minify (Fast)' },
-    { value: 'Weak', label: 'Weak (Basic)' },
-    { value: 'Medium', label: 'Medium (Standard)' },
-    { value: 'Strong', label: 'Strong (Heavy)' },
-    { value: 'MaxStrong', label: 'Max Strong (Hard)' },
-    { value: 'InsaneMode', label: '💀 INSANE MODE (MAX)' },
-  ];
-
-  const addLog = (msg) => {
-    setLogs(prev => [...prev, msg]);
-    // Auto scroll terminal ke bawah
-    setTimeout(() => {
-      if (outputRef.current) {
-        outputRef.current.scrollTop = outputRef.current.scrollHeight;
-      }
-    }, 50);
-  };
+  const addLog = (msg) => setLogs(prev => [...prev, msg]);
 
   const handleUpload = async () => {
-    if (!file) return setError("⚠️ Pilih file Lua dulu!");
-    
+    if (!file) {
+        addLog("[ERR] TARGET_FILE_MISSING");
+        return;
+    }
     setLoading(true);
-    setError('');
     setOutput('');
     setLogs([]);
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('preset', preset);
-
-    addLog("[SYS] Initializing Prometheus Core...");
-    addLog(`[CFG] Mode: ${preset}`);
     
+    // TACTICAL LOGGING SEQUENCE
+    const steps = [
+        `[SYS] MOUNTING DRIVE: ${file.name.toUpperCase()}...`,
+        `[CFG] SECURITY LEVEL: ${preset.toUpperCase()}`,
+        "[NET] BYPASSING FIREWALL...",
+        "[CPU] ALLOCATING RESOURCES..."
+    ];
+
+    // Staggered logs for dramatic effect
+    for (let i = 0; i < steps.length; i++) {
+        setTimeout(() => addLog(steps[i]), i * 400);
+    }
+
     try {
-      // Simulasi loading logs biar keren (Visual Effect)
-      const fakeSteps = [
-        "[AST] Parsing Abstract Syntax Tree...",
-        "[VM] Generating Virtual Machine Opcodes...",
-        "[ENC] Encrypting Constant Pool...",
-        "[CHK] Verifying Integrity..."
-      ];
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('preset', preset);
+        
+        // Execute API call [cite: 20]
+        const req = await fetch('/api/obfuscate', { method: 'POST', body: formData });
+        const res = await req.json();
 
-      for (let i = 0; i < fakeSteps.length; i++) {
-        setTimeout(() => addLog(fakeSteps[i]), i * 800 + 500);
-      }
-
-      const req = await fetch('/api/obfuscate', { method: 'POST', body: formData });
-      const res = await req.json();
-
-      // Tunggu logs visual selesai baru tampilkan hasil
-      setTimeout(() => {
         if (req.ok) {
-          addLog("[OK] Obfuscation Complete.");
-          setOutput(res.code);
+            setTimeout(() => {
+                addLog("[OK] PAYLOAD GENERATED SUCCESSFULLY.");
+                setOutput(res.code);
+                setLoading(false);
+            }, 2500); // Artificial delay to make it feel like "hacking"
         } else {
-          throw new Error(res.details || res.error);
+            throw new Error(res.details || "UNKNOWN_ERROR");
         }
-        setLoading(false);
-      }, 4000);
-
     } catch (err) {
-      setTimeout(() => {
-        setError(err.message);
-        addLog(`[ERR] ${err.message}`);
-        setLoading(false);
-      }, 1000);
+        setTimeout(() => {
+            addLog(`[ERR] ${err.message.toUpperCase()}`);
+            setLoading(false);
+        }, 1500);
     }
   };
 
   return (
-    // CONTAINER UTAMA (100% Layar, Tidak ada Scroll Body)
-    <div className="h-screen w-screen overflow-hidden text-slate-200 font-sans relative flex items-center justify-center animated-bg">
+    // MAIN CONTAINER - NO SCROLL
+    <div className={`h-screen w-screen overflow-hidden relative flex items-center justify-center bg-black transition-colors duration-1000 ${isCritical ? 'shadow-[inset_0_0_100px_rgba(255,0,0,0.2)]' : ''}`}>
       
-      {/* Background Image Overlay (Opsional - Cyberpunk City) */}
-      <div 
-        className="absolute inset-0 opacity-20 pointer-events-none mix-blend-overlay bg-cover bg-center"
-        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1555680202-c86f0e12f086?q=80&w=2070&auto=format&fit=crop')" }}
-      ></div>
+      {/* GLOBAL OVERLAYS */}
+      <div className="crt-overlay"></div>
+      <div className="vignette"></div>
 
-      {/* Grid Pattern Overlay */}
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10"></div>
-
-      {/* --- MAIN APP CARD (Center, Glassmorphism) --- */}
+      {/* THE RIG (Main Window) */}
       <motion.div 
-        initial={{ scale: 0.9, opacity: 0 }} 
-        animate={{ scale: 1, opacity: 1 }}
-        className="
-          relative z-10 w-full h-full md:h-[85vh] md:w-[90vw] max-w-6xl 
-          bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl 
-          md:rounded-3xl overflow-hidden flex flex-col md:flex-row
-        "
+        initial={{ scaleY: 0.1, opacity: 0 }} 
+        animate={{ scaleY: 1, opacity: 1 }}
+        transition={{ duration: 0.5, ease: "circOut" }}
+        className={`
+          relative z-10 w-full h-full md:h-[90vh] md:w-[95vw] max-w-7xl 
+          border ${isCritical ? 'border-red-900' : 'border-gray-800'} 
+          bg-black shadow-2xl flex flex-col md:flex-row
+        `}
       >
+        <ControlModule 
+            file={file} 
+            setFile={setFile} 
+            preset={preset} 
+            setPreset={setPreset} 
+            loading={loading}
+            onFire={handleUpload}
+        />
         
-        {/* === LEFT PANEL: CONTROLS === */}
-        <div className="w-full md:w-1/3 p-6 md:p-8 flex flex-col gap-6 border-b md:border-b-0 md:border-r border-white/10 bg-black/40">
-          
-          {/* Header */}
-          <div>
-            <h1 className="text-3xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-              PROMETHEUS
-            </h1>
-            <p className="text-xs font-mono text-slate-500 uppercase tracking-[0.2em]">Lua 5.1 Obfuscator Engine</p>
-          </div>
-
-          {/* Form Area */}
-          <div className="flex-grow space-y-5">
-            
-            {/* 1. File Upload (Button Style) */}
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Source Code</label>
-              <div className="relative group">
-                <input 
-                  type="file" 
-                  accept=".lua,.txt"
-                  onChange={(e) => setFile(e.target.files[0])}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-                />
-                <div className={`
-                  w-full py-4 px-4 rounded-xl border border-dashed transition-all flex items-center justify-center gap-3
-                  ${file ? 'border-purple-500 bg-purple-500/20' : 'border-white/20 bg-white/5 hover:bg-white/10'}
-                `}>
-                  {file ? (
-                    <>
-                      <div className="bg-purple-500 p-1.5 rounded-md"><Check size={16} className="text-white" /></div>
-                      <span className="text-sm font-bold text-white truncate">{file.name}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Upload size={18} className="text-slate-400" />
-                      <span className="text-sm text-slate-400 font-medium">Click to Upload Script</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Preset Dropdown (Modern Select) */}
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Security Level</label>
-              <div className="relative">
-                <select 
-                  value={preset}
-                  onChange={(e) => setPreset(e.target.value)}
-                  className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl py-4 px-4 pr-10 text-sm font-bold text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all cursor-pointer"
-                >
-                  {presets.map(p => (
-                    <option key={p.value} value={p.value} className="bg-slate-900 text-slate-300">
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
-              </div>
-              {/* Alert jika Insane Mode */}
-              {preset === 'InsaneMode' && (
-                <div className="mt-2 flex items-center gap-2 text-[10px] text-yellow-500 bg-yellow-500/10 p-2 rounded-lg border border-yellow-500/20">
-                  <AlertTriangle size={12} />
-                  <span>Heavy Processing: Might take 10-15s</span>
-                </div>
-              )}
-            </div>
-
-          </div>
-
-          {/* Action Button (Bottom of Left Panel) */}
-          <div className="mt-auto">
-             <button
-                onClick={handleUpload}
-                disabled={loading}
-                className={`
-                  w-full py-5 rounded-xl font-black text-sm uppercase tracking-widest shadow-lg flex items-center justify-center gap-3 transition-all
-                  ${loading 
-                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:scale-[1.02] hover:shadow-purple-500/40 text-white'
-                  }
-                `}
-             >
-                {loading ? <Cpu className="animate-spin" /> : <Zap className="fill-white" />}
-                {loading ? 'PROCESSING...' : 'EXECUTE OBFUSCATION'}
-             </button>
-             {error && <p className="mt-3 text-xs text-red-400 text-center font-mono">{error}</p>}
-          </div>
-
-        </div>
-
-        {/* === RIGHT PANEL: TERMINAL OUTPUT === */}
-        <div className="w-full md:w-2/3 bg-[#0a0a0c] flex flex-col relative font-mono text-xs">
-          
-          {/* Mac-style Window Header */}
-          <div className="h-12 border-b border-white/5 flex items-center justify-between px-6 bg-[#0f0f11]">
-            <div className="flex gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500/40"></div>
-              <div className="w-3 h-3 rounded-full bg-yellow-500/40"></div>
-              <div className="w-3 h-3 rounded-full bg-green-500/40"></div>
-            </div>
-            <div className="text-slate-500 flex items-center gap-2">
-              <Terminal size={12} />
-              <span>{output ? 'result.lua' : 'console'}</span>
-            </div>
-            {output ? (
-              <button 
-                onClick={() => {navigator.clipboard.writeText(output); alert("Copied!")}}
-                className="text-green-400 hover:text-green-300 flex items-center gap-1 uppercase font-bold text-[10px]"
-              >
-                <Copy size={12} /> Copy
-              </button>
-            ) : <div className="w-8"></div>}
-          </div>
-
-          {/* Terminal Content Area */}
-          <div 
-            ref={outputRef}
-            className="flex-grow p-6 overflow-y-auto custom-scroll relative"
-          >
-            {/* 1. Loading Logs */}
-            {loading && (
-               <div className="space-y-2">
-                 {logs.map((log, i) => (
-                   <div key={i} className="text-green-500/80">
-                     <span className="text-green-700 mr-2">$</span>{log}
-                   </div>
-                 ))}
-                 <div className="w-2 h-4 bg-green-500 animate-pulse inline-block"></div>
-               </div>
-            )}
-
-            {/* 2. Code Result */}
-            {!loading && output && (
-              <textarea 
-                readOnly 
-                value={output}
-                className="w-full h-full bg-transparent text-purple-300 resize-none focus:outline-none"
-                spellCheck="false"
-              />
-            )}
-
-            {/* 3. Empty State */}
-            {!loading && !output && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-800 opacity-50">
-                <Shield size={64} className="mb-4" />
-                <p className="uppercase tracking-[0.3em] font-bold">System Idle</p>
-                <p className="text-[10px] mt-2">Ready for injection</p>
-              </div>
-            )}
-          </div>
-          
-          {/* Footer Bar */}
-          <div className="h-8 border-t border-white/5 bg-[#050505] flex items-center justify-between px-4 text-[10px] text-slate-600">
-            <span>Lua 5.1 Environment</span>
-            <span>UTF-8</span>
-          </div>
-
-        </div>
+        <HackerTerminal 
+            logs={logs} 
+            output={output}
+            isCritical={isCritical}
+        />
 
       </motion.div>
     </div>
