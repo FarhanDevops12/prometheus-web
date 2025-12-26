@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "src/app/api/obfuscate/route.js": {
+      "includeFiles": "lua_engine/**",
+      "maxDuration": 10
+    }
+  }
+}
