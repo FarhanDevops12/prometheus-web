@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "lucide-react": "latest",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest"
