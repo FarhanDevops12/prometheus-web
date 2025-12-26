@@ -1,4 +1,7 @@
 {
+  "framework": "nextjs",
+  "buildCommand": "next build",
+  "outputDirectory": ".next",
   "functions": {
     "src/app/api/obfuscate/route.js": {
       "includeFiles": "lua_engine/**",
